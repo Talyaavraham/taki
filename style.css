@@ -389,7 +389,6 @@ body.turn-human .hand button.card:not(.playable)::after {
 .dialog[open] { animation: rise 0.3s cubic-bezier(0.3, 1.5, 0.6, 1); }
 .dialog::backdrop { background: rgb(43 29 20 / 0.55); }
 .dialog h2 { margin: 0 0 16px; font-size: 1.6rem; }
-.dialog-detail { margin: -6px 0 18px; color: var(--ink-soft); }
 .big-face { font-size: 3.5rem; line-height: 1; margin-bottom: 8px; }
 
 .swatches {

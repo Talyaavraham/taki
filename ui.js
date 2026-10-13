@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const { Game, COLOR_NAMES, HAND_SIZE, HUMAN, CPU, describe, isNumber, nextStages } = window.Taki;
+  const { Game, COLOR_NAMES, HUMAN, CPU, describe, isNumber } = window.Taki;
   const CPU_DELAY = 900;
 
   const $ = (id) => document.getElementById(id);
@@ -13,8 +13,7 @@
     discard: $('discard'), colorLabel: $('color-label'), banner: $('banner'), hint: $('hint'),
     lastCard: $('last-card'), closeTaki: $('close-taki'), log: $('log'),
     picker: $('color-picker'), gameOver: $('game-over'), gameOverTitle: $('game-over-title'),
-    gameOverFace: $('game-over-face'), gameOverDetail: $('game-over-detail'),
-    gameOverButton: $('game-over-button'), humanCount: $('human-count'), confetti: $('confetti'),
+    gameOverFace: $('game-over-face'), confetti: $('confetti'),
   };
 
   const CORNERS = { stop: 'STOP', changeDir: '⇄', plus: '+', plus2: '+2', taki: 'TAKI', changeColor: '' };
@@ -41,21 +40,9 @@
   let lastBanner = '';
   const shownStages = [null, null];
 
-  // Stages carry over between rounds; each round is a fresh Game dealt from them.
-  let stages = [HAND_SIZE, HAND_SIZE];
-  let roundResult = null; // nextStages() result once a round ends
-
-  function newMatch() {
-    stages = [HAND_SIZE, HAND_SIZE];
-    roundResult = null;
-    if (els.gameOver.open) els.gameOver.close(); // its close handler starts the round
-    else newRound();
-  }
-
-  function newRound() {
+  function newGame() {
     clearTimeout(cpuTimer);
-    roundResult = null;
-    game = new Game(Math.random, stages);
+    game = new Game();
     colorCard = null;
     if (els.picker.open) els.picker.close();
     message = '';
@@ -99,9 +86,6 @@
       shownStages[p] = stage;
     });
 
-    const humanCards = game.hands[HUMAN].length;
-    els.humanCount.textContent = `${humanCards} card${humanCards === 1 ? '' : 's'} in hand`;
-
     // Computer
     const cpuCards = game.hands[CPU].length;
     const spread = Math.min(5, 32 / cpuCards);
@@ -111,7 +95,7 @@
       back.style.setProperty('--fan', `${(i - (cpuCards - 1) / 2) * spread}deg`);
       return back;
     }));
-    els.cpuCount.textContent = `${cpuCards} card${cpuCards === 1 ? '' : 's'} in hand`;
+    els.cpuCount.textContent = `${cpuCards} card${cpuCards === 1 ? '' : 's'}`;
     els.cpuLast.hidden = cpuCards !== 1;
 
     // Piles
@@ -229,14 +213,7 @@
     clearTimeout(cpuTimer);
     if (game.over) {
       const won = game.winner === HUMAN;
-      roundResult = roundResult || nextStages(game.stages, game.winner);
-      const matchOver = roundResult.matchWinner !== null;
-      const [you, cpu] = roundResult.stages;
-      els.gameOverTitle.textContent = `${won ? 'You win' : 'The computer wins'} the ${matchOver ? 'match' : 'round'}!`;
-      els.gameOverDetail.textContent = matchOver
-        ? `New match: everyone goes back to Stage ${HAND_SIZE}.`
-        : `Next round: You – Stage ${you} · Computer – Stage ${cpu}`;
-      els.gameOverButton.textContent = matchOver ? 'New match' : 'Next round';
+      els.gameOverTitle.textContent = won ? 'You win!' : 'The computer wins!';
       els.gameOverFace.textContent = won ? '🏆' : '🤖';
       if (!els.gameOver.open) {
         els.gameOver.showModal();
@@ -297,12 +274,8 @@
     if (game.current === HUMAN && !game.declared) humanAct(() => game.declareLastCard());
   });
 
-  $('new-game').addEventListener('click', newMatch);
-  // Closing the round-over dialog (button or Escape) moves on to the next round.
-  els.gameOver.addEventListener('close', () => {
-    if (roundResult) stages = roundResult.stages;
-    newRound();
-  });
+  $('new-game').addEventListener('click', newGame);
+  els.gameOver.addEventListener('close', newGame);
 
-  newRound();
+  newGame();
 })();

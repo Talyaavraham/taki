@@ -299,21 +299,12 @@
     }
   }
 
-  // Between rounds: the round's winner starts the next round with one card fewer.
-  // Winning a round at stage 1 wins the match, and both players go back to the first stage.
-  function nextStages(stages, winner) {
-    if (stages[winner] <= 1) return { stages: stages.map(() => HAND_SIZE), matchWinner: winner };
-    const next = stages.slice();
-    next[winner]--;
-    return { stages: next, matchWinner: null };
-  }
-
   function takiOrder(card) {
     if (isNumber(card)) return 0;
     return { taki: 1, changeDir: 2, plus: 3, stop: 4, plus2: 5 }[card.value] ?? 0;
   }
 
-  const api = { Game, COLORS, COLOR_NAMES, VALUE_NAMES, HAND_SIZE, HUMAN, CPU, describe, isNumber, nextStages };
+  const api = { Game, COLORS, COLOR_NAMES, VALUE_NAMES, HUMAN, CPU, describe, isNumber };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Taki = api;
 })(this);
