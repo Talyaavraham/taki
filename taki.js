@@ -50,14 +50,12 @@
   }
 
   class Game {
-    // stages[p] is how many cards player p starts the round with.
-    constructor(rng = Math.random, stages = [HAND_SIZE, HAND_SIZE]) {
+    constructor(rng = Math.random) {
       this.rng = rng;
       this.deck = buildDeck(rng);
       this.discard = [];
       this.hands = [[], []];
       this.names = ['You', 'Computer'];
-      this.stages = stages.slice();
       this.current = HUMAN;
       this.direction = 1;
       this.activeColor = null;
@@ -68,10 +66,8 @@
       this.winner = null;
       this.log = [];
 
-      for (let i = 0; i < Math.max(...this.stages); i++) {
-        this.hands.forEach((hand, p) => {
-          if (i < this.stages[p]) hand.push(this.deck.pop());
-        });
+      for (let i = 0; i < HAND_SIZE; i++) {
+        for (const hand of this.hands) hand.push(this.deck.pop());
       }
       // The starting card is always a number card.
       let first = this.deck.pop();
