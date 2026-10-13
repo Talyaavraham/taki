@@ -8,6 +8,7 @@
   const $ = (id) => document.getElementById(id);
   const els = {
     cpuHand: $('cpu-hand'), cpuCount: $('cpu-count'), cpuLast: $('cpu-last'),
+    stages: [$('human-stage'), $('cpu-stage')],
     humanHand: $('human-hand'), drawPile: $('draw-pile'), drawLabel: $('draw-label'),
     discard: $('discard'), colorLabel: $('color-label'), banner: $('banner'), hint: $('hint'),
     lastCard: $('last-card'), closeTaki: $('close-taki'), log: $('log'),
@@ -37,6 +38,7 @@
   let message = '';
   let lastTopId = null;
   let lastBanner = '';
+  const shownStages = [null, null];
 
   function newGame() {
     clearTimeout(cpuTimer);
@@ -70,6 +72,19 @@
     const humanTurn = !game.over && game.current === HUMAN;
     document.body.classList.toggle('turn-human', humanTurn);
     document.body.classList.toggle('turn-cpu', !game.over && game.current === CPU);
+
+    // Stage labels; a changed stage flashes briefly.
+    game.stages.forEach((stage, p) => {
+      if (stage === shownStages[p]) return;
+      const el = els.stages[p];
+      el.textContent = `${game.names[p]} – Stage ${stage}`;
+      if (shownStages[p] !== null) {
+        el.classList.remove('flash');
+        void el.offsetWidth; // restart the animation
+        el.classList.add('flash');
+      }
+      shownStages[p] = stage;
+    });
 
     // Computer
     const cpuCards = game.hands[CPU].length;

@@ -130,6 +130,17 @@ body.turn-human .seat-human {
 }
 body.turn-cpu .seat-cpu .avatar { animation: wobble 0.9s ease-in-out infinite; }
 
+.stage-tag {
+  padding: 2px 12px;
+  background: #fff;
+  border: var(--outline);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+body.turn-cpu .seat-cpu .stage-tag,
+body.turn-human .seat-human .stage-tag { background: var(--yellow); }
+.stage-tag.flash { animation: stage-flash 1.2s ease-out; }
+
 .count { color: var(--ink-soft); font-weight: 500; font-size: 0.95rem; }
 .spacer { flex: 1; }
 
@@ -427,6 +438,9 @@ body.turn-human .hand button.card:not(.playable)::after {
 @keyframes shake {
   20% { translate: -6px 0; rotate: -4deg; }
   60% { translate: 6px 0; rotate: 4deg; }
+}
+@keyframes stage-flash {
+  0%, 60% { background: var(--red); color: #fff; transform: scale(1.12); }
 }
 @keyframes bump {
   40% { transform: scale(1.1); }
