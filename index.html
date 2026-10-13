@@ -5,17 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TAKI</title>
   <meta name="description" content="Play TAKI, the Israeli card game, against the computer in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="topbar">
-    <h1 class="logo">TAKI</h1>
-    <button id="new-game" class="btn btn-ghost" type="button">New game</button>
+    <h1 class="logo" aria-label="TAKI"><span>T</span><span>A</span><span>K</span><span>I</span><span>!</span></h1>
+    <button id="new-game" class="btn" type="button">New game</button>
   </header>
 
   <main class="table">
     <section class="seat seat-cpu" aria-label="Computer">
       <div class="seat-label">
+        <span class="avatar" aria-hidden="true">🤖</span>
         <span class="name">Computer</span>
         <span id="cpu-count" class="count"></span>
         <span id="cpu-last" class="badge" hidden>Last card!</span>
@@ -23,9 +27,9 @@
       <div id="cpu-hand" class="hand hand-backs"></div>
     </section>
 
-    <section class="center" aria-label="Piles">
+    <section class="mat" aria-label="Piles">
       <div class="pile">
-        <button id="draw-pile" class="card card-back" type="button" aria-label="Draw pile"></button>
+        <button id="draw-pile" class="card card-back pile-stack" type="button" aria-label="Draw pile"></button>
         <span id="draw-label" class="pile-label"></span>
       </div>
       <div class="pile">
@@ -37,9 +41,12 @@
     <div id="banner" class="banner" role="status"></div>
 
     <section class="seat seat-human" aria-label="Your hand">
-      <div class="controls">
-        <button id="last-card" class="btn" type="button">Last card!</button>
-        <button id="close-taki" class="btn btn-accent" type="button" hidden>Close TAKI</button>
+      <div class="seat-label">
+        <span class="avatar" aria-hidden="true">😎</span>
+        <span class="name">You</span>
+        <span class="spacer"></span>
+        <button id="last-card" class="btn btn-small" type="button">Last card!</button>
+        <button id="close-taki" class="btn btn-small btn-accent" type="button" hidden>Close TAKI</button>
       </div>
       <div id="human-hand" class="hand"></div>
       <p id="hint" class="hint" aria-live="polite"></p>
@@ -53,7 +60,7 @@
 
   <dialog id="color-picker" class="dialog">
     <form method="dialog">
-      <h2>Choose a color</h2>
+      <h2>Pick a color!</h2>
       <div class="swatches">
         <button value="red" class="swatch c-red">Red</button>
         <button value="green" class="swatch c-green">Green</button>
@@ -65,10 +72,13 @@
 
   <dialog id="game-over" class="dialog">
     <form method="dialog">
+      <div id="game-over-face" class="big-face" aria-hidden="true"></div>
       <h2 id="game-over-title"></h2>
       <button value="again" class="btn btn-accent">Play again</button>
     </form>
   </dialog>
+
+  <canvas id="confetti" aria-hidden="true"></canvas>
 
   <script src="taki.js"></script>
   <script src="ui.js"></script>

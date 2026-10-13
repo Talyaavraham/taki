@@ -12,14 +12,31 @@
     discard: $('discard'), colorLabel: $('color-label'), banner: $('banner'), hint: $('hint'),
     lastCard: $('last-card'), closeTaki: $('close-taki'), log: $('log'),
     picker: $('color-picker'), gameOver: $('game-over'), gameOverTitle: $('game-over-title'),
+    gameOverFace: $('game-over-face'), confetti: $('confetti'),
   };
 
-  const SYMBOLS = { stop: 'STOP', changeDir: '⇄', plus: '+', plus2: '+2', taki: 'TAKI', changeColor: '' };
+  const CORNERS = { stop: 'STOP', changeDir: '⇄', plus: '+', plus2: '+2', taki: 'TAKI', changeColor: '' };
+  const LINE = 'stroke="#2b1d14" stroke-width="3" stroke-linejoin="round"';
+  const ICONS = {
+    stop: `<svg viewBox="0 0 40 40"><polygon points="13,3 27,3 37,13 37,27 27,37 13,37 3,27 3,13" fill="currentColor" ${LINE}/>`
+      + `<rect x="10" y="17" width="20" height="6" rx="2" fill="#fff" ${LINE}/></svg>`,
+    changeDir: `<svg viewBox="0 0 40 40"><polygon points="4,8 24,8 24,2 36,11 24,20 24,14 4,14" fill="currentColor" ${LINE}/>`
+      + `<polygon points="36,26 16,26 16,20 4,29 16,38 16,32 36,32" fill="currentColor" ${LINE}/></svg>`,
+    plus: `<svg viewBox="0 0 40 40"><polygon points="15,4 25,4 25,15 36,15 36,25 25,25 25,36 15,36 15,25 4,25 4,15 15,15" fill="currentColor" ${LINE}/></svg>`,
+    changeColor: '<svg class="fill" viewBox="0 0 40 40">'
+      + '<path d="M20 20V0A20 20 0 0 1 40 20Z" style="fill:var(--red)"/>'
+      + '<path d="M20 20H40A20 20 0 0 1 20 40Z" style="fill:var(--blue)"/>'
+      + '<path d="M20 20V40A20 20 0 0 1 0 20Z" style="fill:var(--yellow)"/>'
+      + '<path d="M20 20H0A20 20 0 0 1 20 0Z" style="fill:var(--green)"/>'
+      + `<path d="M20 0V40M0 20H40" ${LINE}/></svg>`,
+  };
 
   let game;
   let cpuTimer = null;
   let colorCard = null; // Change Color card waiting for the picker
   let message = '';
+  let lastTopId = null;
+  let lastBanner = '';
 
   function newGame() {
     clearTimeout(cpuTimer);
@@ -34,16 +51,17 @@
 
   function cardFace(card, tag = 'div') {
     const el = document.createElement(tag);
-    const big = isNumber(card) ? card.value : SYMBOLS[card.value];
+    const corner = isNumber(card) ? card.value : CORNERS[card.value];
+    const center = ICONS[card.value] || `<span class="big ${corner.length > 2 ? 'word' : ''}">${corner}</span>`;
     el.className = `card ${card.color ? `c-${card.color}` : 'c-wild'}`;
     if (card.chosen) {
       el.classList.add('chosen');
       el.style.setProperty('--chosen', `var(--${card.chosen})`);
     }
     el.innerHTML = `
-      <span class="corner tl">${big}</span>
-      <span class="oval"><span class="big ${big.length > 2 ? 'word' : ''}">${big}</span></span>
-      <span class="corner br">${big}</span>`;
+      <span class="corner tl">${corner}</span>
+      <span class="disc">${center}</span>
+      <span class="corner br">${corner}</span>`;
     el.setAttribute('aria-label', describe(card));
     return el;
   }
@@ -55,16 +73,27 @@
 
     // Computer
     const cpuCards = game.hands[CPU].length;
-    els.cpuHand.replaceChildren(...game.hands[CPU].map(() => {
+    const spread = Math.min(5, 32 / cpuCards);
+    els.cpuHand.replaceChildren(...game.hands[CPU].map((_, i) => {
       const back = document.createElement('div');
       back.className = 'card card-back';
+      back.style.setProperty('--fan', `${(i - (cpuCards - 1) / 2) * spread}deg`);
       return back;
     }));
     els.cpuCount.textContent = `${cpuCards} card${cpuCards === 1 ? '' : 's'}`;
     els.cpuLast.hidden = cpuCards !== 1;
 
     // Piles
-    els.discard.replaceChildren(cardFace(game.top));
+    // Show the last few cards as a messy pile; the newest one lands with a bounce.
+    els.discard.replaceChildren(...game.discard.slice(-3).map((card) => {
+      const el = cardFace(card);
+      el.style.setProperty('--tilt', `${((card.id * 47) % 25) - 12}deg`);
+      return el;
+    }));
+    if (game.top.id !== lastTopId) {
+      els.discard.lastElementChild.classList.add('pop');
+      lastTopId = game.top.id;
+    }
     els.colorLabel.innerHTML =
       `<span class="color-dot c-${game.activeColor}"></span>${COLOR_NAMES[game.activeColor]}`;
     const canDraw = humanTurn && !game.taki;
@@ -85,7 +114,14 @@
     els.lastCard.disabled = !humanTurn;
     els.lastCard.classList.toggle('declared', humanTurn && game.declared);
 
-    els.banner.textContent = bannerText();
+    const banner = bannerText();
+    if (banner !== lastBanner) {
+      els.banner.textContent = banner;
+      els.banner.classList.remove('bump');
+      void els.banner.offsetWidth; // restart the animation
+      els.banner.classList.add('bump');
+      lastBanner = banner;
+    }
     els.hint.textContent = message || hintText();
 
     els.log.replaceChildren(...game.log.slice(-40).reverse().map((line) => {
@@ -115,14 +151,59 @@
     return `${prefix}Play a ${COLOR_NAMES[game.activeColor]} card${match}, or click the draw pile.`;
   }
 
+  function confetti() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const canvas = els.confetti;
+    const ctx = canvas.getContext('2d');
+    const w = (canvas.width = innerWidth);
+    const h = (canvas.height = innerHeight);
+    const colors = ['#ff4f4f', '#2fc46d', '#3b8cff', '#ffc83a', '#ffffff'];
+    const bits = Array.from({ length: 160 }, () => ({
+      x: w / 2 + (Math.random() - 0.5) * w * 0.3,
+      y: h * 0.45,
+      vx: (Math.random() - 0.5) * 16,
+      vy: -Math.random() * 18 - 6,
+      size: 6 + Math.random() * 8,
+      spin: Math.random() * Math.PI,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    const start = performance.now();
+    (function frame(now) {
+      ctx.clearRect(0, 0, w, h);
+      for (const b of bits) {
+        b.vy += 0.45;
+        b.vx *= 0.99;
+        b.x += b.vx;
+        b.y += b.vy;
+        b.spin += 0.15;
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.spin);
+        ctx.fillStyle = b.color;
+        ctx.strokeStyle = '#2b1d14';
+        ctx.lineWidth = 2;
+        ctx.fillRect(-b.size / 2, -b.size / 4, b.size, b.size / 2);
+        ctx.strokeRect(-b.size / 2, -b.size / 4, b.size, b.size / 2);
+        ctx.restore();
+      }
+      if (now - start < 3500) requestAnimationFrame(frame);
+      else ctx.clearRect(0, 0, w, h);
+    })(start);
+  }
+
   // ----- Turn flow -----
 
   function update() {
     render();
     clearTimeout(cpuTimer);
     if (game.over) {
-      els.gameOverTitle.textContent = game.winner === HUMAN ? 'You win! 🎉' : 'The computer wins';
-      if (!els.gameOver.open) els.gameOver.showModal();
+      const won = game.winner === HUMAN;
+      els.gameOverTitle.textContent = won ? 'You win!' : 'The computer wins!';
+      els.gameOverFace.textContent = won ? '🏆' : '🤖';
+      if (!els.gameOver.open) {
+        els.gameOver.showModal();
+        if (won) confetti();
+      }
     } else if (game.current === CPU) {
       cpuTimer = setTimeout(() => {
         game.cpuMove();
